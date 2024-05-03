@@ -37,6 +37,26 @@ struct Area {
     value: i32,
 }
 
+impl Area {
+    fn combinations(&self) {
+        let N = self.fields.len();
+        let s: i32 = self.value;
+        let combin_area: Vec<Vec<i32>>;
+        for i in self.fields.iter().enumerate() {
+
+        }
+    }
+    
+    fn print_coords(&self) {
+        for (i, row) in self.fields.iter().enumerate() {
+            // Iterating over each integer in the sub-vector
+            for (j, value) in row.iter().enumerate() {
+                println!("Element at [{}][{}] is {}", i, j, value);
+            }
+        }
+    }
+}
+
 // Deserialize function helper for SudokuRow to handle optional integers
 fn parse_optional_ints<'de, D>(deserializer: D) -> Result<Vec<Option<i32>>, D::Error>
 where

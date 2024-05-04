@@ -38,15 +38,17 @@ struct Area {
 }
 
 impl Area {
-    fn combinations(&self) {
-        let N = self.fields.len();
-        let s: i32 = self.value;
-        let combin_area: Vec<Vec<i32>>;
-        for i in self.fields.iter().enumerate() {
-
-        }
+    fn combinations_all_fileds(&self) {
+        // let N: usize = self.fields.len();
+        // let s: i32 = self.value;
+        // let combin_area: Vec<Vec<i32>>;
+        // let upper_bound: f32 = s-(N-1)*(10-0.5*N);
+        // for i in self.fields.iter().enumerate() {
+        //     self.fields[i];
+        // }
     }
     
+
     fn print_coords(&self) {
         for (i, row) in self.fields.iter().enumerate() {
             // Iterating over each integer in the sub-vector
@@ -55,6 +57,27 @@ impl Area {
             }
         }
     }
+}
+
+fn combinations(n: f32, s: f32) -> Vec<Vec<i32>> {
+    let mut combin_area = Vec::new();
+    // let combin_area: Vec<Vec<i32>>;
+    let lower_bound_raw: f32 = s-(n-1.0)*(10.0-0.5*n);
+    let upper_bound_raw: f32 = s-0.5*n*(n-1.0);
+
+    let lower_bound = lower_bound_raw.max(0.0).ceil() as i32;
+    let upper_bound = upper_bound_raw.max(0.0).floor() as i32;
+
+    println!("Up raw {}, down raw {}", upper_bound_raw, lower_bound_raw);
+    println!("Up {}, down {}", upper_bound, lower_bound);
+
+    for i in lower_bound..=upper_bound {
+        // Create a vector with a single element i
+        let combin = vec![i];
+        // Push the new vector into the outer vector
+        combin_area.push(combin);
+    }
+    combin_area
 }
 
 // Deserialize function helper for SudokuRow to handle optional integers
@@ -83,4 +106,10 @@ fn main() {
     println!("{:?}", gameboard);
 
     gameboard.print();
+
+    let matrix_test = combinations(2.0, 5.0);
+
+    for row in &matrix_test {
+        println!("{:?}", row);
+    }
 }

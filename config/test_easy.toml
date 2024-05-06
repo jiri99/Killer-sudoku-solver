@@ -1,0 +1,151 @@
+[[sudoku]]
+row = ["", "1", "",  "7", "", "", "4", "3", ""]
+[[sudoku]]
+row = ["4", "",  "7",  "", "", "", "6", "", ""]
+[[sudoku]]
+row = ["", "8", "",  "", "", "2", "", "", "7"]
+[[sudoku]]
+row = ["8", "7", "", "5", "4", "", "2", "9", ""]
+[[sudoku]]
+row = ["", "4", "", "", "", "7", "", "", "1"]
+[[sudoku]]
+row = ["", "5", "", "1", "", "", "", "", ""]
+[[sudoku]]
+row = ["", "6", "", "8", "", "", "", "2", ""]
+[[sudoku]]
+row = ["", "", "2", "", "", "", "8", "6", "5"]
+[[sudoku]]
+row = ["", "9", "", "2", "", "", "", "7", ""]
+
+[[area]]
+fields = [[0,0], [0,1]]
+value = 10
+
+[[area]]
+fields = [[0,2], [0,3]]
+value = 12
+
+[[area]]
+fields = [[0,4], [0,5], [1,5]]
+value = 23
+
+[[area]]
+fields = [[0,6], [0,7], [1,7]]
+value = 12
+
+[[area]]
+fields = [[0,8], [1,8]]
+value = 10
+
+[[area]]
+fields = [[1,0], [1,1]]
+value = 6
+
+[[area]]
+fields = [[1,2], [2,2]]
+value = 10
+
+[[area]]
+fields = [[1,3]]
+value = 3
+
+[[area]]
+fields = [[1,4], [2,4]]
+value = 6
+
+[[area]]
+fields = [[1,6], [2,6]]
+value = 15
+
+[[area]]
+fields = [[2,0], [3,0], [4,0]]
+value = 17
+
+[[area]]
+fields = [[2,1], [3,1], [4,1], [5,1], [3,2]]
+value = 25
+
+[[area]]
+fields = [[2,3], [3,3]]
+value = 9
+
+[[area]]
+fields = [[2,5], [3,5], [4,5]]
+value = 12
+
+[[area]]
+fields = [[2,7], [2,8], [3,6], [3,7], [3,8]]
+value = 25
+
+[[area]]
+fields = [[3,4], [4,4], [5,4]]
+value = 15
+
+[[area]]
+fields = [[4,2], [5,2]]
+value = 15
+
+[[area]]
+fields = [[4,3], [5,3]]
+value = 7
+
+[[area]]
+fields = [[4,6], [4,7]]
+value = 13
+
+[[area]]
+fields = [[4,8], [5,8], [6,8]]
+value = 13
+
+[[area]]
+fields = [[5,0]]
+value = 2
+
+[[area]]
+fields = [[5,5], [5,6], [5,7]]
+value = 19
+
+[[area]]
+fields = [[6,0], [6,1], [6,2], [7,1]]
+value = 20
+
+[[area]]
+fields = [[6,3], [7,3], [8,3]]
+value = 19
+
+[[area]]
+fields = [[6,4], [6,5]]
+value = 8
+
+[[area]]
+fields = [[6,6], [6,7], [7,7], [7,8]]
+value = 14
+
+[[area]]
+fields = [[7,0]]
+value = 1
+
+[[area]]
+fields = [[7,2], [8,2]]
+value = 10
+
+[[area]]
+fields = [[7,4], [7,5], [8,4]]
+value = 17
+
+[[area]]
+fields = [[7,6], [8,6], [8,5]]
+value = 12
+
+[[area]]
+fields = [[8,0], [8,1]]
+value = 14
+
+[[area]]
+fields = [[8,7], [8,8]]
+value = 11
+
+
+
+
+

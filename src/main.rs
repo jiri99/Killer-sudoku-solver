@@ -118,9 +118,6 @@ fn combinations(n: f32, s: f32) -> Vec<Vec<i32>> {
         let lower_bound = lower_bound_raw.max(1.0).ceil() as i32;
         let upper_bound = upper_bound_raw.max(0.0).min(9.0).floor() as i32;
     
-        println!("Up raw {}, down raw {}", upper_bound_raw, lower_bound_raw);
-        println!("Up {}, down {}", upper_bound, lower_bound);
-    
         if lower_bound <= upper_bound {
             for i in lower_bound..=upper_bound {
                 // let mut combin_area = combinations(n - 1.0, s - 1.0);
@@ -166,7 +163,7 @@ where
 
 fn main() {
     // Load the TOML configuration file
-    let gameboard_str = fs::read_to_string("config/test.toml")
+    let gameboard_str = fs::read_to_string("config/test_easy.toml")
         .expect("Failed to read configuration file");
 
     // Deserialize the TOML string into the GameBoard struct

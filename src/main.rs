@@ -1,6 +1,7 @@
 use serde::{Deserialize, de::{self, Deserializer}};
 use std::fs;
 use std::collections::HashSet;
+use rand::Rng;
 
 mod game_config;
 use game_config::GameBoardConfig;
@@ -28,12 +29,23 @@ fn copy_areas(game_config: &GameBoardConfig) -> Vec<Area> {
     area_new
 }
 
-fn copy_sudoku(game_config: &GameBoardConfig) -> Vec<Vec<i32>> {
+fn copy_raw_sudoku(game_config: &GameBoardConfig) -> Vec<Vec<i32>> {
     let mut sudoku_new: Vec<Vec<i32>> = vec![vec![0; 9]; 9];
     for (i, row) in game_config.sudoku.iter().enumerate().take(9) {
         for (j, cell) in row.row.iter().enumerate().take(9) {
             // Fill with the number or 0 if None
             sudoku_new[i][j] = cell.unwrap_or(0);
+        }
+    }
+    sudoku_new
+}
+
+fn copy_sudoku(sudoku: &Vec<Vec<i32>>) -> Vec<Vec<i32>> {
+    let mut sudoku_new: Vec<Vec<i32>> = vec![vec![0; 9]; 9];
+    for (i, row) in sudoku.iter().enumerate().take(9) {
+        for (j, cell) in row.iter().enumerate().take(9) {
+            // Fill with the number or 0 if None
+            sudoku_new[i][j] = *cell;
         }
     }
     sudoku_new
@@ -93,14 +105,16 @@ struct GameBoard {
     sudoku: Vec<Vec<i32>>,
     area: Vec<Area>,
     curr_iter: Vec<Vec<i32>>,
+    best_iter: Vec<Vec<i32>>,
 }
 
 impl GameBoard {
     fn new(game_config: &GameBoardConfig) -> Self {
         Self {
             area: copy_areas(game_config),
-            sudoku: copy_sudoku(game_config),
-            curr_iter: copy_sudoku(game_config),
+            sudoku: copy_raw_sudoku(game_config),
+            curr_iter: copy_raw_sudoku(game_config),
+            best_iter: copy_raw_sudoku(game_config),
         }
     }
 
@@ -131,6 +145,23 @@ impl GameBoard {
                 }
                 else {
                     print!(" {} |", self.curr_iter[i][j]);
+                }
+            }
+            println!("")
+        }
+        println!(" --- --- --- --- --- --- --- --- --- ");
+    }
+
+    fn print_solution(&self) {
+        for (i, row) in self.best_iter.iter().enumerate() {
+            println!(" --- --- --- --- --- --- --- --- --- ");
+            print!("|");
+            for (j, cell) in row.iter().enumerate() {
+                if self.best_iter[i][j] == 0 {
+                    print!("   |");
+                }
+                else {
+                    print!(" {} |", self.best_iter[i][j]);
                 }
             }
             println!("")
@@ -230,6 +261,72 @@ impl GameBoard {
             }
         }
     }
+
+    fn swap(&self) -> Vec<Vec<i32>> {
+        let mut sudoku_neighbor: Vec<Vec<i32>> = copy_sudoku(&self.curr_iter);
+
+        let mut rng_int = rand::thread_rng();
+        let area_id_swap = self.area.len() as u32;
+        let random_area: usize = rng_int.gen_range(0..area_id_swap) as usize;
+
+        let comb_id_swap = self.area[random_area].combinations.len() as u32;
+        let random_comb: usize = rng_int.gen_range(0..comb_id_swap) as usize;
+
+
+        let mut cloned_combinations = self.area[random_area].combinations[random_comb].clone();
+        for (i, row) in self.area[random_area].fields.iter().enumerate() {
+            if row.len() == 2 {
+                let row_idx = row[0] as usize;
+                let col_idx = row[1] as usize;
+    
+                if row_idx < self.curr_iter.len() && col_idx < self.curr_iter[row_idx].len() {
+                    let value = &self.sudoku[row_idx][col_idx];
+                    if *value == 0 {
+                        if let Some(last) = cloned_combinations.pop() {
+                            sudoku_neighbor[row_idx][col_idx] = last;
+                        } else {
+                            println!("No elements to pop.");
+                        }
+                    }
+                } else {
+                    println!("Indices [{}, {}] are out of bounds.", row_idx, col_idx);
+                }
+            } else {
+                println!("Invalid indices format.");
+            }
+        }
+
+        sudoku_neighbor
+    }
+
+    fn simulated_annealing(&mut self) {
+        // random number generator
+        let mut rng = rand::thread_rng();
+
+        let mut temp: f32 = 1.0;
+        let temp_end: f32 = 0.01;
+        let alpha: f32 = 0.99;
+        self.set_init();
+
+        self.best_iter = copy_sudoku(&self.curr_iter);
+        let mut best_energy: i32 = count_duplicates(&self.curr_iter) as i32;
+
+        while temp > temp_end {
+            for _ in 0..100 {
+                let new_board: Vec<Vec<i32>> = self.swap();
+                let new_energy: i32 = count_duplicates(&new_board) as i32;
+                let delta_energy: i32 = new_energy - (count_duplicates(&self.curr_iter) as i32);
+                if (delta_energy < 0) || ((- (delta_energy as f32) / temp).exp() > rng.gen_range(0.0..1.0)) {
+                    self.curr_iter = copy_sudoku(&new_board);
+                    if new_energy < best_energy {
+                        best_energy = new_energy;
+                        self.best_iter = copy_sudoku(&new_board);
+                    }
+                }
+            }
+            temp *= alpha;
+        }
+    }
 }
 
 fn main() {
@@ -241,29 +338,23 @@ fn main() {
     let gameboardconfig: GameBoardConfig = toml::from_str(&gameboard_str)
         .expect("Failed to parse configuration file");
 
-    // Now you can access your configuration data
-    // println!("{:?}", gameboard);
-
-    // gameboardconfig.print();
-
     let mut gameboard = GameBoard::new(&gameboardconfig);
 
-    // let matrix_test = combinations(3.0, 15.0);
-
-    // for row in &matrix_test {
-    //     println!("{:?}", row);
-    // }
-
-    // println!("{:?}", matrix_test.len());
-
+    // Print of original sudoku
     gameboard.print_assingment();
 
+    // Prepare game and resolve simple areas
     gameboard.prepare_game();
     gameboard.resolve_simple();
-    gameboard.set_init();
+    
+    // Print of prepared sudoku
     gameboard.print();
-    gameboard.print_areas();
 
-    println!("Duplicates: {}", count_duplicates(&gameboard.curr_iter));
-    println!("Duplicates: {}", count_duplicates(&gameboard.sudoku));
+    // Simulated annealing
+    gameboard.simulated_annealing();
+
+    // Print of best solution
+    gameboard.print_solution();
+
+    println!("Duplicates in best solution {}", count_duplicates(&gameboard.best_iter));
 }

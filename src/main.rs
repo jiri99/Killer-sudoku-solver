@@ -1,5 +1,6 @@
 use serde::{Deserialize, de::{self, Deserializer}};
 use std::fs;
+use std::collections::HashSet;
 
 mod game_config;
 use game_config::GameBoardConfig;
@@ -29,14 +30,6 @@ fn copy_areas(game_config: &GameBoardConfig) -> Vec<Area> {
 
 fn copy_sudoku(game_config: &GameBoardConfig) -> Vec<Vec<i32>> {
     let mut sudoku_new: Vec<Vec<i32>> = vec![vec![0; 9]; 9];
-    // for (i, row) in game_config.sudoku.iter().enumerate() {
-    //     for (j, cell) in row.row.iter().enumerate() {
-    //         match cell {
-    //             Some(num) => sudoku_new[i][j] = *num,
-    //             None => sudoku_new[i][j] = 0,
-    //         }
-    //     }
-    // }
     for (i, row) in game_config.sudoku.iter().enumerate().take(9) {
         for (j, cell) in row.row.iter().enumerate().take(9) {
             // Fill with the number or 0 if None
@@ -46,9 +39,60 @@ fn copy_sudoku(game_config: &GameBoardConfig) -> Vec<Vec<i32>> {
     sudoku_new
 }
 
+fn count_duplicates_in_set(numbers: &[i32]) -> usize {
+    let mut seen = HashSet::new();
+    let mut duplicates = HashSet::new();
+
+    for &num in numbers {
+        // Ignore empty cells, assuming 0 is the empty cell marker
+        if num == 0 {
+            continue;
+        }
+        if !seen.insert(num) {
+            duplicates.insert(num);
+        }
+    }
+
+    duplicates.len()
+}
+
+fn count_duplicates(sudoku: &Vec<Vec<i32>>) -> usize {
+    let mut total_duplicates = 0;
+
+    // Check rows for duplicates
+    for row in sudoku {
+        total_duplicates += count_duplicates_in_set(row);
+    }
+
+    // Check columns for duplicates
+    for col in 0..9 {
+        let mut column = Vec::with_capacity(9);
+        for row in 0..9 {
+            column.push(sudoku[row][col]);
+        }
+        total_duplicates += count_duplicates_in_set(&column);
+    }
+
+    // Check 3x3 sub-grids for duplicates
+    for grid_row in (0..9).step_by(3) {
+        for grid_col in (0..9).step_by(3) {
+            let mut sub_grid = Vec::with_capacity(9);
+            for row in grid_row..grid_row + 3 {
+                for col in grid_col..grid_col + 3 {
+                    sub_grid.push(sudoku[row][col]);
+                }
+            }
+            total_duplicates += count_duplicates_in_set(&sub_grid);
+        }
+    }
+
+    total_duplicates
+}
+
 struct GameBoard {
     sudoku: Vec<Vec<i32>>,
     area: Vec<Area>,
+    curr_iter: Vec<Vec<i32>>,
 }
 
 impl GameBoard {
@@ -56,10 +100,11 @@ impl GameBoard {
         Self {
             area: copy_areas(game_config),
             sudoku: copy_sudoku(game_config),
+            curr_iter: copy_sudoku(game_config),
         }
     }
 
-    fn print(&self) {
+    fn print_assingment(&self) {
         for (i, row) in self.sudoku.iter().enumerate() {
             println!(" --- --- --- --- --- --- --- --- --- ");
             print!("|");
@@ -75,9 +120,36 @@ impl GameBoard {
         }
         println!(" --- --- --- --- --- --- --- --- --- ");
     }
-    
-    fn prepare_game(&self) {
+
+    fn print(&self) {
+        for (i, row) in self.curr_iter.iter().enumerate() {
+            println!(" --- --- --- --- --- --- --- --- --- ");
+            print!("|");
+            for (j, cell) in row.iter().enumerate() {
+                if self.curr_iter[i][j] == 0 {
+                    print!("   |");
+                }
+                else {
+                    print!(" {} |", self.curr_iter[i][j]);
+                }
+            }
+            println!("")
+        }
+        println!(" --- --- --- --- --- --- --- --- --- ");
+    }
+
+    pub fn print_areas(&self) {
         for sel_area in &self.area {
+            for row in &sel_area.combinations {
+                println!("{:?}", row);
+            }
+
+            println!("Area value: {}", sel_area.value);
+        }
+    }
+    
+    fn prepare_game(&mut self) {
+        for sel_area in &mut self.area {
             let mut sum = 0;
             let mut none_count = 0;  // Counter for None values
             for (i, row) in sel_area.fields.iter().enumerate() {
@@ -85,12 +157,8 @@ impl GameBoard {
                     let row_idx = row[0] as usize;
                     let col_idx = row[1] as usize;
         
-                    // Check if the indices are within the bounds of the sudoku grid
                     if row_idx < self.sudoku.len() && col_idx < self.sudoku[row_idx].len() {
-                        // Access the element safely
                         let value = &self.sudoku[row_idx][col_idx];
-                        println!("Value at [{}, {}]: {:?}", row_idx, col_idx, value);
-                        // Check if the value is None and increment none_count if true
                         if *value == 0 {
                             none_count += 1;
                         }
@@ -105,13 +173,61 @@ impl GameBoard {
                 }
             }
 
-            let sel_area_combinations = combinations(none_count as f32, (sel_area.value - sum) as f32);
+            sel_area.combinations = combinations(none_count as f32, (sel_area.value - sum) as f32);
+        }
+    }
 
-            for row in &sel_area_combinations {
-                println!("{:?}", row);
+    fn resolve_simple(&mut self) {
+        for sel_area in &mut self.area {
+            if sel_area.combinations.len() == 1 {
+                for (i, row) in sel_area.fields.iter().enumerate() {
+                    if row.len() == 2 {
+                        let row_idx = row[0] as usize;
+                        let col_idx = row[1] as usize;
+            
+                        if row_idx < self.curr_iter.len() && col_idx < self.curr_iter[row_idx].len() {
+                            let value = &self.curr_iter[row_idx][col_idx];
+                            if *value == 0 {
+                                // self.sudoku[row_idx][col_idx] = sel_area.combinations[0][0];
+                                self.curr_iter[row_idx][col_idx] = sel_area.combinations[0][0];
+                            }
+                        } else {
+                            println!("Indices [{}, {}] are out of bounds.", row_idx, col_idx);
+                        }
+                    } else {
+                        println!("Invalid indices format.");
+                    }
+                }
+
             }
+        }
+        self.area.retain(|area| area.combinations.len() != 1);
+    }
 
-            println!("Area value: {}", sel_area.value);
+    fn set_init(&mut self) {
+        for sel_area in &self.area {
+            let mut cloned_combinations = sel_area.combinations[0].clone();
+            for (i, row) in sel_area.fields.iter().enumerate() {
+                if row.len() == 2 {
+                    let row_idx = row[0] as usize;
+                    let col_idx = row[1] as usize;
+        
+                    if row_idx < self.curr_iter.len() && col_idx < self.curr_iter[row_idx].len() {
+                        let value = &self.curr_iter[row_idx][col_idx];
+                        if *value == 0 {
+                            if let Some(last) = cloned_combinations.pop() {
+                                self.curr_iter[row_idx][col_idx] = last;
+                            } else {
+                                println!("No elements to pop.");
+                            }
+                        }
+                    } else {
+                        println!("Indices [{}, {}] are out of bounds.", row_idx, col_idx);
+                    }
+                } else {
+                    println!("Invalid indices format.");
+                }
+            }
         }
     }
 }
@@ -128,9 +244,9 @@ fn main() {
     // Now you can access your configuration data
     // println!("{:?}", gameboard);
 
-    gameboardconfig.print();
+    // gameboardconfig.print();
 
-    let gameboard = GameBoard::new(&gameboardconfig);
+    let mut gameboard = GameBoard::new(&gameboardconfig);
 
     // let matrix_test = combinations(3.0, 15.0);
 
@@ -140,5 +256,14 @@ fn main() {
 
     // println!("{:?}", matrix_test.len());
 
-    // gameboard.prepare_game();
+    gameboard.print_assingment();
+
+    gameboard.prepare_game();
+    gameboard.resolve_simple();
+    gameboard.set_init();
+    gameboard.print();
+    gameboard.print_areas();
+
+    println!("Duplicates: {}", count_duplicates(&gameboard.curr_iter));
+    println!("Duplicates: {}", count_duplicates(&gameboard.sudoku));
 }

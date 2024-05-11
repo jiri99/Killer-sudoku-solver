@@ -390,8 +390,8 @@ impl GameBoard {
         let mut rng = rand::thread_rng();
 
         let mut temp: f32 = 1.0;
-        let temp_end: f32 = 0.01;
-        let alpha: f32 = 0.99;
+        let temp_end: f32 = 0.001;
+        let alpha: f32 = 0.999;
         self.set_init();
 
         self.best_iter = copy_sudoku(&self.curr_iter);
@@ -399,7 +399,7 @@ impl GameBoard {
 
         let mut iteration_counter: i32 = 0;
         while temp > temp_end {
-            for _ in 0..100 {
+            for _ in 0..1000 {
                 let new_board: Vec<Vec<i32>> = self.swap();
                 let new_energy: i32 = count_duplicates(&new_board) as i32;
                 let delta_energy: i32 = new_energy - (count_duplicates(&self.curr_iter) as i32);
@@ -415,6 +415,7 @@ impl GameBoard {
                 iteration_counter += 1;
             }
             temp *= alpha;
+            println!("Current temperature: {}", temp);
         }
     }
 }
@@ -422,7 +423,8 @@ impl GameBoard {
 fn main() {
     // Load the TOML configuration file
     // let filename: String = "config/test_easy.toml".to_string();
-    let filename: String = "config/test_medium.toml".to_string();
+    // let filename: String = "config/test_medium.toml".to_string();
+    let filename: String = "config/test_expert.toml".to_string();
 
     let gameboard_str = fs::read_to_string(filename)
         .expect("Failed to read configuration file");
